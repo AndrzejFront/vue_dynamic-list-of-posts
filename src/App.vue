@@ -58,7 +58,9 @@ function close() {
 
 function open(post) {
   if (pending.value) return;
-  if (selected.value?.id === post.id && mode.value === 'preview') return;
+  if (selected.value?.id === post.id) {
+    mode.value = 'preview'; postError.value = ''; return;
+  }
   selected.value = post; mode.value = 'preview'; postError.value = '';
   comments.value = []; failedDeletes.value = []; commentForm.value = false;
   loadComments();

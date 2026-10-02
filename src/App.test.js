@@ -93,6 +93,28 @@ describe('Posts and comments', () => {
     expect(wrapper.find('[data-cy="Comment"]').exists()).toBe(false);
   });
 
+  it('shows comment loading errors and successfully retries', async () => {
+    const original = handler;
+    handler = (url, options) => url.includes('/comments?') ? Promise.reject(new Error()) : original(url, options);
+    await start(); await button('Open').trigger('click'); await flushPromises();
+    expect(wrapper.get('[data-cy="CommentsError"]').text()).toContain('Unable to load comments');
+    handler = () => response([comment]);
+    await button('Retry').trigger('click'); await flushPromises();
+    expect(wrapper.get('[data-cy="Comment"]').text()).toContain('Hello');
+  });
+
+  it('keeps the post and sidebar available when deletion fails', async () => {
+    await start(); await button('Open').trigger('click'); await flushPromises();
+    handler = () => Promise.reject(new Error());
+    await button('Delete').trigger('click'); await flushPromises();
+    expect(wrapper.text()).toContain('Unable to delete the post');
+    expect(wrapper.get('.Sidebar').classes()).toContain('Sidebar--open');
+    expect(wrapper.findAll('tbody tr')).toHaveLength(2);
+    handler = () => response(null);
+    await button('Delete').trigger('click'); await flushPromises();
+    expect(wrapper.findAll('tbody tr')).toHaveLength(1);
+  });
+
   it('keeps comment identity, clears body, and preserves the form during post editing', async () => {
     await start(); await button('Open').trigger('click'); await flushPromises();
     await button('Write a comment').trigger('click'); await fillComment();
